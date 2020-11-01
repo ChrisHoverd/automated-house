@@ -3,6 +3,7 @@
 #define buzzerPin 52
 #define greenLED 50
 #define redLED 51
+#define motionSensor 3
 
 unsigned long ms_from_start = 0;
 unsigned long ms_previous_read_redLED = 0;
@@ -10,15 +11,18 @@ unsigned long redLED_interval = 250;
 int greenLED_state = 0;
 int redLED_state = 0;
 volatile int alarm_state = 0;
+
 void setup() {
 
   Serial.begin(9600);
   pinMode(buttonPin, INPUT);
   pinMode(buzzerPin, OUTPUT);
+  pinMode(motionSensor, INPUT);
 
   pinMode(greenLED, OUTPUT);
   pinMode(redLED, OUTPUT);
   attachInterrupt(digitalPinToInterrupt(buttonPin), buttonISR, FALLING);
+  attachInterrupt(digitalPinToInterrupt(motionSensor), motionISR, RISING);
 
   digitalWrite(greenLED, HIGH);
 }
@@ -34,12 +38,12 @@ void loop() {
   }
   else{ //turns on buzzer alarm and red strobe LED
     tone(buzzerPin, 500);
-    redLEDAlert();
+    redLEDStrobe();
   }
 
 }
 
-void redLEDAlert() { //Flashes redLED
+void redLEDStrobe() { //Flashes redLED
   digitalWrite(greenLED, LOW);
   ms_from_start = millis();
   if (ms_from_start - ms_previous_read_redLED > redLED_interval) {
@@ -60,5 +64,12 @@ void buttonISR() { //PushButton ISR changes alarm state to On or Off
   }
   else {
     alarm_state = 0;
+  }
+}
+
+void motionISR(){
+  Serial.println("Motion Sensor Triggered");
+  if (alarm_state == 0){
+    alarm_state = 1;
   }
 }
