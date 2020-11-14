@@ -1,7 +1,5 @@
 
 
-
-
 #define buttonPin 2
 #define buzzerPin 52
 #define greenLED 50
@@ -10,7 +8,10 @@
 #define flameSensor 18
 #include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
+#include <Password.h>
 
+
+Password password = Password("6969");
 const byte rows = 4;
 const byte cols = 3;
 
@@ -33,12 +34,17 @@ unsigned long redLED_interval = 250;
 unsigned long ms_from_lcd_start = 0;
 unsigned long ms_previous_read_lcd = 0;
 unsigned long lcd_interval = 500;
+
 int greenLED_state = 0;
 int redLED_state = 0;
-
 volatile int alarm_state = 0;
 volatile int motion_sensor_1_state = 0;
-volatile int flame_sensor_1_state =0;
+volatile int flame_sensor_1_state = 0;
+volatile int buzzer_1_state = 0;
+int alarm_screen_state = 0;
+int home_screen_state = 0;
+
+int password_curs = 10;
 
 void setup() {
   lcd.init();  //initialize the lcd
@@ -56,6 +62,8 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(flameSensor), flame_sensor_1_ISR, RISING);
 
   digitalWrite(greenLED, HIGH);
+  keypad.addEventListener(keypadEvent);
+  displayHomeScreen();
 }
 
 void loop() {
@@ -66,17 +74,19 @@ void loop() {
     greenLED_state = 1;
     redLED_state = 0;
     motion_sensor_1_state = 0;
-    flame_sensor_1_state =0;
+    flame_sensor_1_state = 0;
+    buzzer_1_state = 0;
     digitalWrite(greenLED, greenLED_state);
     digitalWrite(redLED, redLED_state);
     noTone(buzzerPin);
   }
   else{ //turns on buzzer alarm and red strobe LED
     displayAlarmScreen();
+    buzzer_1_state = 1;
     tone(buzzerPin, 500);
     redLEDStrobe();
   }
-
+  keypad.getKey();
 }
 
 void redLEDStrobe() { //Flashes redLED
@@ -120,24 +130,64 @@ void flame_sensor_1_ISR() { //triggered on flame, raises alarm
 }
 
 void displayHomeScreen(){
-  ms_from_lcd_start = millis();
-  if (ms_from_lcd_start - ms_previous_read_lcd > lcd_interval) {
-    lcd.clear();
-    ms_previous_read_lcd = millis();
-    lcd.setCursor ( 0, 0 );            
-    lcd.print("Hello, Mr. Hoverd"); 
-    lcd.setCursor ( 0, 1 );           
-    lcd.print("System Active"); 
+ // if (home_screen_state === 1) && (alarm_screen_state == 0){
+  //ms_from_lcd_start = millis();
+  //if (ms_from_lcd_start - ms_previous_read_lcd > lcd_interval) {
+  if (home_screen_state == 0)
+      {
+      lcd.clear();
+     // ms_previous_read_lcd = millis();
+      lcd.setCursor ( 0, 0 );            
+      lcd.print("Hello, Mr. Hoverd"); 
+      lcd.setCursor ( 0, 1 );           
+      lcd.print("System Active"); 
+      home_screen_state = 1;
+      alarm_screen_state = 0;
+      }
     }
-  }
-  
 
 void displayAlarmScreen(){
-  ms_from_lcd_start = millis();
-  if (ms_from_lcd_start - ms_previous_read_lcd > lcd_interval) {
-    ms_previous_read_lcd = millis();
-  lcd.clear();
-  lcd.setCursor ( 0, 1 );            
-  lcd.print("!!ALARM TRIGGERED!!"); 
+//  ms_from_lcd_start = millis();
+//  if (ms_from_lcd_start - ms_previous_read_lcd > lcd_interval) {
+  //  ms_previous_read_lcd = millis();
+  if (alarm_screen_state == 0)
+    {
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Password: ");
+    lcd.setCursor ( 0, 1 );            
+    lcd.print("!!ALARM TRIGGERED!!"); 
+    alarm_screen_state = 1;
+    home_screen_state = 0;
+    }
+  }
+
+void keypadEvent(KeypadEvent key){
+  switch (keypad.getState()){
+  case PRESSED:
+  lcd.setCursor((password_curs++),0);
+  switch (key){
+    case '#': 
+    checkPassword();
+    break;
+
+    case '*': 
+    password.reset();
+    break;
+
+    default: 
+    password.append(key);
+    lcd.print("*");
+  }
+  }
+}
+
+void checkPassword() {
+  if (password.evaluate()){
+    alarm_state = 0;
+    password.reset();
+  }
+  else {
+    password.reset();
   }
 }
