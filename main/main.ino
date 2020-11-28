@@ -1,11 +1,12 @@
 
 
 #define buttonPin 2
-#define buzzerPin 52
+#define buzzerPin 23
 #define greenLED 50
 #define redLED 51
 #define motionSensor 3
 #define flameSensor 18
+#define valvePin 8
 #include <LiquidCrystal_I2C.h>
 #include <Keypad.h>
 #include <Password.h>
@@ -82,6 +83,7 @@ void loop() {
   }
   else{ //turns on buzzer alarm and red strobe LED
     displayAlarmScreen();
+    digitalWrite(valvePin, LOW);
     buzzer_1_state = 1;
     tone(buzzerPin, 500);
     redLEDStrobe();
@@ -126,17 +128,18 @@ void flame_sensor_1_ISR() { //triggered on flame, raises alarm
   Serial.println("Flame Sensor Triggered");
   if (alarm_state == 0){
     alarm_state = 1;
+    digitalWrite(valvePin, HIGH);
   }
 }
 
 void displayHomeScreen(){
- // if (home_screen_state === 1) && (alarm_screen_state == 0){
+  //if (home_screen_state === 1) && (alarm_screen_state == 0){
   //ms_from_lcd_start = millis();
   //if (ms_from_lcd_start - ms_previous_read_lcd > lcd_interval) {
+  // ms_previous_read_lcd = millis();
   if (home_screen_state == 0)
       {
       lcd.clear();
-     // ms_previous_read_lcd = millis();
       lcd.setCursor ( 0, 0 );            
       lcd.print("Hello, Mr. Hoverd"); 
       lcd.setCursor ( 0, 1 );           
@@ -147,8 +150,8 @@ void displayHomeScreen(){
     }
 
 void displayAlarmScreen(){
-//  ms_from_lcd_start = millis();
-//  if (ms_from_lcd_start - ms_previous_read_lcd > lcd_interval) {
+  //  ms_from_lcd_start = millis();
+  //  if (ms_from_lcd_start - ms_previous_read_lcd > lcd_interval) {
   //  ms_previous_read_lcd = millis();
   if (alarm_screen_state == 0)
     {
