@@ -12,7 +12,7 @@
 #include <Password.h>
 
 
-Password password = Password("6969");
+Password password = Password("1379");
 const byte rows = 4;
 const byte cols = 3;
 
@@ -35,6 +35,10 @@ unsigned long redLED_interval = 250;
 unsigned long ms_from_lcd_start = 0;
 unsigned long ms_previous_read_lcd = 0;
 unsigned long lcd_interval = 500;
+unsigned long valve_interval = 5000;
+unsigned long valve_ms_from_start = 0;
+unsigned long valve_ms_previous_read = 0;
+
 
 int greenLED_state = 0;
 int redLED_state = 0;
@@ -57,6 +61,7 @@ void setup() {
   pinMode(motionSensor, INPUT);
   pinMode(greenLED, OUTPUT);
   pinMode(redLED, OUTPUT);
+  pinMode(valvePin, OUTPUT);
   
   attachInterrupt(digitalPinToInterrupt(buttonPin), buttonISR, FALLING);
   attachInterrupt(digitalPinToInterrupt(motionSensor), motion_sensor_1_ISR, RISING);
@@ -80,10 +85,10 @@ void loop() {
     digitalWrite(greenLED, greenLED_state);
     digitalWrite(redLED, redLED_state);
     noTone(buzzerPin);
+    digitalWrite(valvePin, LOW);
   }
   else{ //turns on buzzer alarm and red strobe LED
     displayAlarmScreen();
-    digitalWrite(valvePin, LOW);
     buzzer_1_state = 1;
     tone(buzzerPin, 500);
     redLEDStrobe();
@@ -124,13 +129,16 @@ void motion_sensor_1_ISR(){ //triggered on motion, raises alarm
 }
 
 void flame_sensor_1_ISR() { //triggered on flame, raises alarm
-  flame_sensor_1_state = 1;
-  Serial.println("Flame Sensor Triggered");
-  if (alarm_state == 0){
-    alarm_state = 1;
-    digitalWrite(valvePin, HIGH);
+  
+  //valve_ms_from_start = millis();
+   // if (valve_ms_from_start - valve_ms_previous_read > valve_interval){ 
+      flame_sensor_1_state = 1;
+      alarm_state = 1;   
+      
+      digitalWrite(valvePin, HIGH);
+      //valve_ms_previous_read = millis();
+    //}
   }
-}
 
 void displayHomeScreen(){
   //if (home_screen_state === 1) && (alarm_screen_state == 0){
@@ -141,7 +149,7 @@ void displayHomeScreen(){
       {
       lcd.clear();
       lcd.setCursor ( 0, 0 );            
-      lcd.print("Hello, Mr. Hoverd"); 
+      lcd.print("Hello, User"); 
       lcd.setCursor ( 0, 1 );           
       lcd.print("System Active"); 
       home_screen_state = 1;
